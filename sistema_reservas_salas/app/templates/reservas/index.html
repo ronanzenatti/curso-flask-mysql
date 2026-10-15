@@ -1,0 +1,134 @@
+<!-- app/templates/reservas/index.html -->
+{% extends layout %}
+{% from "components/paginacao.html" import renderizar_paginacao %}
+{% block titulo %}Agenda de Reservas — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-slate-900">Agenda de Reservas de Salas</h2>
+        <p class="text-sm text-slate-500">Consulte horários, filtre por status e gerencie aprovações em tempo real</p>
+    </div>
+    {% if tem_permissao('reservas.criar') %}
+    <a href="{{ url_for('reservas.criar') }}"
+       class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+        + Nova Reserva
+    </a>
+    {% endif %}
+</div>
+
+<!-- Barra de Pesquisa Dinâmica e Filtros -->
+<form method="GET" action="{{ url_for('reservas.listar') }}"
+      data-target="#container-tabela-reservas"
+      class="js-form-filtro bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col lg:flex-row gap-4">
+    <div class="flex-1">
+        <input type="text" name="q" value="{{ busca }}"
+               placeholder="Pesquisar por evento, finalidade, código da sala, nome da sala ou solicitante..."
+               class="js-busca-dinamica w-full px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+    </div>
+    <input type="date" name="data" value="{{ data_filtro }}"
+           class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+    <select name="status" class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+        <option value="">Todos os Status</option>
+        <option value="pendente" {% if status_filtro == 'pendente' %}selected{% endif %}>Pendentes</option>
+        <option value="aprovada" {% if status_filtro == 'aprovada' %}selected{% endif %}>Aprovadas</option>
+        <option value="rejeitada" {% if status_filtro == 'rejeitada' %}selected{% endif %}>Rejeitadas</option>
+        <option value="cancelada" {% if status_filtro == 'cancelada' %}selected{% endif %}>Canceladas</option>
+    </select>
+    <select name="per_page" class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+        {% for qtd in [5, 8, 10, 20] %}
+        <option value="{{ qtd }}" {% if paginacao.por_pagina == qtd %}selected{% endif %}>{{ qtd }} por página</option>
+        {% endfor %}
+    </select>
+</form>
+
+<!-- Tabela Paginada de Reservas -->
+<div id="container-tabela-reservas" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase">
+                    <th class="py-3.5 px-6">Data e Horário</th>
+                    <th class="py-3.5 px-6">Sala</th>
+                    <th class="py-3.5 px-6">Evento / Finalidade</th>
+                    <th class="py-3.5 px-6">Solicitante</th>
+                    <th class="py-3.5 px-6 text-center">Status</th>
+                    <th class="py-3.5 px-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-sm">
+                {% for r in paginacao.itens %}
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-4 px-6 whitespace-nowrap">
+                        <p class="font-bold text-slate-900">{{ r.data_reserva.strftime('%d/%m/%Y') }}</p>
+                        <p class="text-xs font-mono text-indigo-600">{{ r.hora_inicio_fmt }} às {{ r.hora_fim_fmt }}</p>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="font-mono text-xs font-bold bg-slate-100 text-slate-800 px-2 py-0.5 rounded">{{ r.sala_codigo }}</span>
+                        <p class="font-medium text-slate-900 mt-0.5">{{ r.sala_nome }}</p>
+                    </td>
+                    <td class="py-4 px-6">
+                        <p class="font-semibold text-slate-900">{{ r.titulo }}</p>
+                        <p class="text-xs text-slate-500">{{ r.finalidade }} • {{ r.participantes_estimados }} pessoas</p>
+                        {% if r.observacoes %}
+                        <p class="text-[11px] text-slate-400 italic mt-0.5">{{ r.observacoes }}</p>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6">
+                        <p class="font-medium text-slate-800">{{ r.solicitante_nome }}</p>
+                        <p class="text-xs text-slate-500">{{ r.solicitante_setor }}</p>
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        {% if r.status == 'aprovada' %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Aprovada</span>
+                        {% elif r.status == 'pendente' %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pendente</span>
+                        {% elif r.status == 'rejeitada' %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">Rejeitada</span>
+                        {% else %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-700">Cancelada</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-right whitespace-nowrap space-x-1">
+                        {% if r.status == 'pendente' and tem_permissao('reservas.aprovar') %}
+                        <form method="POST" action="{{ url_for('reservas.alterar_status', reserva_id=r.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="novo_status" value="aprovada">
+                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">
+                                ✓ Aprovar
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('reservas.alterar_status', reserva_id=r.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="novo_status" value="rejeitada">
+                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold">
+                                ✕ Recusar
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if r.status in ('pendente', 'aprovada') and (r.usuario_id == g.usuario.id or tem_permissao('reservas.cancelar_qualquer')) %}
+                        <form method="POST" action="{{ url_for('reservas.alterar_status', reserva_id=r.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="novo_status" value="cancelada">
+                            <button type="submit" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
+                                Cancelar
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-10 text-center text-slate-500">
+                        Nenhuma reserva encontrada para os filtros selecionados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {{ renderizar_paginacao(paginacao, '#container-tabela-reservas') }}
+</div>
+{% endblock %}

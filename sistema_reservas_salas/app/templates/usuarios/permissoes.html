@@ -1,0 +1,66 @@
+<!-- app/templates/usuarios/permissoes.html -->
+{% extends "base.html" %}
+{% block titulo %}Permissões de {{ usuario.nome }} — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h2 class="text-2xl font-bold text-slate-900">Permissões Personalizadas: {{ usuario.nome }}</h2>
+        <p class="text-sm text-slate-500">{{ usuario.email }} • Setor: {{ usuario.setor }}</p>
+    </div>
+    <a href="{{ url_for('usuarios.listar') }}" class="text-sm text-slate-600 hover:text-slate-900 font-medium">
+        ← Voltar para Usuários
+    </a>
+</div>
+
+<form method="POST" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Etiqueta de Cargo / Função</label>
+            <input type="text" name="cargo_etiqueta" required maxlength="60" value="{{ usuario.cargo_etiqueta }}"
+                   class="w-full px-4 py-2 rounded-xl border border-slate-300 text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Status da Conta</label>
+            <select name="ativo" class="w-full px-4 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                <option value="1" {% if usuario.ativo %}selected{% endif %}>Conta Ativa (Pode fazer login)</option>
+                <option value="0" {% if not usuario.ativo %}selected{% endif %}>Conta Bloqueada / Inativa</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for modulo, lista_permissoes in permissoes_por_modulo.items() %}
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-base text-indigo-700 border-b border-slate-100 pb-3 mb-4">
+                Módulo: {{ modulo }}
+            </h3>
+            <div class="space-y-3">
+                {% for perm in lista_permissoes %}
+                <label class="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer border border-transparent hover:border-slate-200 transition">
+                    <input type="checkbox" name="permissoes_ids" value="{{ perm.id }}"
+                           {% if perm.id in ids_atuais %}checked{% endif %}
+                           class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-900">
+                            {{ perm.nome }}
+                            <code class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-1">{{ perm.codigo }}</code>
+                        </p>
+                        <p class="text-xs text-slate-500">{{ perm.descricao }}</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="flex justify-end gap-3">
+        <button type="submit"
+                class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-sm text-sm transition">
+            Salvar Permissões Personalizadas
+        </button>
+    </div>
+</form>
+{% endblock %}

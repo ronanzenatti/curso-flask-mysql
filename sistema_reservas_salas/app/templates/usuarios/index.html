@@ -1,0 +1,102 @@
+<!-- app/templates/usuarios/index.html -->
+{% extends layout %}
+{% from "components/paginacao.html" import renderizar_paginacao %}
+{% block titulo %}Usuários e Permissões — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-slate-900">Usuários & Permissões Personalizadas</h2>
+        <p class="text-sm text-slate-500">Gerencie contas e configure permissões granulares por usuário</p>
+    </div>
+    {% if tem_permissao('usuarios.gerenciar') %}
+    <a href="{{ url_for('usuarios.criar') }}"
+       class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+        + Novo Usuário
+    </a>
+    {% endif %}
+</div>
+
+<!-- Barra de Pesquisa Dinâmica e Filtros -->
+<form method="GET" action="{{ url_for('usuarios.listar') }}"
+      data-target="#container-tabela-usuarios"
+      class="js-form-filtro bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4">
+    <div class="flex-1">
+        <input type="text" name="q" value="{{ busca }}"
+               placeholder="Pesquisar dinamicamente por nome, e-mail, setor ou cargo..."
+               class="js-busca-dinamica w-full px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+    </div>
+    <select name="ativo" class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+        <option value="">Todos os Status</option>
+        <option value="1" {% if status_filtro == '1' %}selected{% endif %}>Somente Ativos</option>
+        <option value="0" {% if status_filtro == '0' %}selected{% endif %}>Somente Inativos</option>
+    </select>
+    <select name="per_page" class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+        {% for qtd in [5, 8, 10, 20] %}
+        <option value="{{ qtd }}" {% if paginacao.por_pagina == qtd %}selected{% endif %}>{{ qtd }} por página</option>
+        {% endfor %}
+    </select>
+</form>
+
+<!-- Container da Tabela Paginada -->
+<div id="container-tabela-usuarios" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase">
+                    <th class="py-3.5 px-6">Nome / E-mail</th>
+                    <th class="py-3.5 px-6">Setor</th>
+                    <th class="py-3.5 px-6">Perfil Base</th>
+                    <th class="py-3.5 px-6 text-center">Permissões Ativas</th>
+                    <th class="py-3.5 px-6 text-center">Status</th>
+                    <th class="py-3.5 px-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-sm">
+                {% for u in paginacao.itens %}
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-4 px-6">
+                        <p class="font-semibold text-slate-900">{{ u.nome }}</p>
+                        <p class="text-xs text-slate-500">{{ u.email }}</p>
+                    </td>
+                    <td class="py-4 px-6 text-slate-700">{{ u.setor }}</td>
+                    <td class="py-4 px-6">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
+                            {{ u.cargo_etiqueta }}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 font-bold text-xs">
+                            {{ u.total_permissoes }} chaves
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        {% if u.ativo %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Ativo</span>
+                        {% else %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">Inativo</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-right">
+                        {% if tem_permissao('usuarios.permissoes') %}
+                        <a href="{{ url_for('usuarios.gerenciar_permissoes', usuario_id=u.id) }}"
+                           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition">
+                            🔐 Permissões
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-10 text-center text-slate-500">
+                        Nenhum usuário encontrado para "{{ busca }}".
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {{ renderizar_paginacao(paginacao, '#container-tabela-usuarios') }}
+</div>
+{% endblock %}

@@ -1,0 +1,131 @@
+<!-- app/templates/usuarios/form.html -->
+{% extends "base.html" %}
+{% block titulo %}Novo Usuário — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-5xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900">Cadastrar Novo Usuário</h2>
+            <p class="text-sm text-slate-500">Defina as credenciais de acesso e selecione as permissões personalizadas iniciais</p>
+        </div>
+        <a href="{{ url_for('usuarios.listar') }}" class="text-sm text-slate-600 hover:text-slate-900 font-medium">
+            ← Voltar para Usuários
+        </a>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nome Completo</label>
+                <input type="text" name="nome" required maxlength="120" placeholder="Ex: Rodrigo Almeida"
+                       value="{{ dados.get('nome', '') }}"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">E-mail Institucional</label>
+                <input type="email" name="email" required maxlength="150" placeholder="rodrigo@salafacil.com"
+                       value="{{ dados.get('email', '') }}"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Senha Inicial</label>
+                <input type="password" name="senha" required minlength="6" maxlength="128" placeholder="Mínimo de 6 caracteres"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Setor / Departamento</label>
+                <input type="text" name="setor" required maxlength="80" value="{{ dados.get('setor', 'Docência') }}"
+                       placeholder="Ex: Coordenação, TI, Docência"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Etiqueta de Cargo / Perfil Base</label>
+                <input type="text" name="cargo_etiqueta" required maxlength="60" value="{{ dados.get('cargo_etiqueta', 'Solicitante') }}"
+                       placeholder="Ex: Solicitante, Gestor de Espaços, Coordenador"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+        </div>
+
+        {% if not pode_definir_permissoes %}
+        <!-- Quem só tem 'usuarios.gerenciar' não escolhe permissões: o servidor aplica o perfil Solicitante -->
+        <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-5 text-sm">
+            <p class="font-semibold">Permissões iniciais: perfil básico de Solicitante</p>
+            <p class="mt-1">
+                O novo usuário receberá as 3 permissões básicas (visualizar salas, visualizar reservas e solicitar reservas).
+                Para conceder outras permissões, peça a quem possui a chave <code>usuarios.permissoes</code>
+                que as ajuste depois do cadastro.
+            </p>
+        </div>
+        {% else %}
+        <!-- Seleção de Permissões Personalizadas Iniciais -->
+        <div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <h3 class="text-base font-bold text-slate-900">Permissões Personalizadas Iniciais</h3>
+                <div class="flex gap-2">
+                    <button type="button"
+                            onclick="document.querySelectorAll('.js-chk-perm').forEach(c => c.checked = ['salas.visualizar','reservas.visualizar','reservas.criar'].includes(c.dataset.codigo))"
+                            class="px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
+                        Padrão Solicitante
+                    </button>
+                    <button type="button"
+                            onclick="document.querySelectorAll('.js-chk-perm').forEach(c => c.checked = true)"
+                            class="px-3 py-1 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-semibold">
+                        Marcar Todas
+                    </button>
+                    <button type="button"
+                            onclick="document.querySelectorAll('.js-chk-perm').forEach(c => c.checked = false)"
+                            class="px-3 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold">
+                        Limpar Seleção
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for modulo, lista_permissoes in permissoes|groupby('modulo') %}
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h4 class="font-bold text-base text-indigo-700 border-b border-slate-100 pb-3 mb-4">
+                        Módulo: {{ modulo }}
+                    </h4>
+                    <div class="space-y-3">
+                        {% for perm in lista_permissoes %}
+                        <label class="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer border border-transparent hover:border-slate-200 transition">
+                            <input type="checkbox" name="permissoes_ids" value="{{ perm.id }}"
+                                   data-codigo="{{ perm.codigo }}"
+                                   {% if (reenviado and perm.id|string in dados.getlist('permissoes_ids'))
+                                      or (not reenviado and perm.codigo in ('salas.visualizar', 'reservas.visualizar', 'reservas.criar')) %}checked{% endif %}
+                                   class="js-chk-perm mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-900">
+                                    {{ perm.nome }}
+                                    <code class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-1">{{ perm.codigo }}</code>
+                                </p>
+                                <p class="text-xs text-slate-500">{{ perm.descricao }}</p>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="flex justify-end gap-3">
+            <a href="{{ url_for('usuarios.listar') }}"
+               class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-sm text-sm transition">
+                Criar Usuário
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

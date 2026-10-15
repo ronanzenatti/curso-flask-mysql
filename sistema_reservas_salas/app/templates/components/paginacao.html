@@ -1,0 +1,49 @@
+<!-- app/templates/components/paginacao.html -->
+{% macro renderizar_paginacao(paginacao, alvo_container='#container-tabela') %}
+<div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm no-print">
+    <div class="text-slate-600">
+        {% if paginacao.total_registros > 0 %}
+            Exibindo <span class="font-semibold text-slate-900">{{ paginacao.inicio_item }}</span>
+            a <span class="font-semibold text-slate-900">{{ paginacao.fim_item }}</span>
+            de <span class="font-semibold text-indigo-600">{{ paginacao.total_registros }}</span> registros
+        {% else %}
+            Nenhum registro encontrado para os filtros aplicados
+        {% endif %}
+    </div>
+
+    {% if paginacao.total_paginas > 1 %}
+    <div class="flex items-center gap-1.5">
+        <button type="button"
+                data-page="{{ paginacao.pagina_anterior }}"
+                data-target="{{ alvo_container }}"
+                {% if not paginacao.tem_anterior %}disabled{% endif %}
+                class="js-btn-pagina px-3 py-1.5 rounded-lg border text-xs font-semibold transition
+                       {% if paginacao.tem_anterior %}bg-white border-slate-300 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300
+                       {% else %}bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed{% endif %}">
+            ← Anterior
+        </button>
+
+        {% for num in paginacao.paginas_visiveis %}
+        <button type="button"
+                data-page="{{ num }}"
+                data-target="{{ alvo_container }}"
+                class="js-btn-pagina w-8 h-8 rounded-lg border text-xs font-bold transition
+                       {% if num == paginacao.pagina %}bg-indigo-600 border-indigo-600 text-white shadow-sm
+                       {% else %}bg-white border-slate-300 text-slate-700 hover:bg-indigo-50{% endif %}">
+            {{ num }}
+        </button>
+        {% endfor %}
+
+        <button type="button"
+                data-page="{{ paginacao.proxima_pagina }}"
+                data-target="{{ alvo_container }}"
+                {% if not paginacao.tem_proxima %}disabled{% endif %}
+                class="js-btn-pagina px-3 py-1.5 rounded-lg border text-xs font-semibold transition
+                       {% if paginacao.tem_proxima %}bg-white border-slate-300 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300
+                       {% else %}bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed{% endif %}">
+            Próxima →
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}

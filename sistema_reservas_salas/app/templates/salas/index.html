@@ -1,0 +1,109 @@
+<!-- app/templates/salas/index.html -->
+{% extends layout %}
+{% from "components/paginacao.html" import renderizar_paginacao %}
+{% block titulo %}Catálogo de Salas — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-slate-900">Catálogo de Salas e Laboratórios</h2>
+        <p class="text-sm text-slate-500">Pesquise salas por código, bloco, capacidade ou equipamentos disponíveis</p>
+    </div>
+    {% if tem_permissao('salas.criar') %}
+    <a href="{{ url_for('salas.criar') }}"
+       class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+        + Cadastrar Sala
+    </a>
+    {% endif %}
+</div>
+
+<form method="GET" action="{{ url_for('salas.listar') }}"
+      data-target="#container-tabela-salas"
+      class="js-form-filtro bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4">
+    <div class="flex-1">
+        <input type="text" name="q" value="{{ busca }}"
+               placeholder="Pesquisar sala por código (ex: LAB-101), nome, bloco ou recurso (ex: Projetor)..."
+               class="js-busca-dinamica w-full px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+    </div>
+    <div class="w-full md:w-48">
+        <input type="number" name="capacidade_min" value="{{ capacidade_min }}" min="1"
+               placeholder="Capacidade mín."
+               class="js-busca-dinamica w-full px-4 py-2 rounded-xl border border-slate-300 text-sm">
+    </div>
+    <select name="per_page" class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+        {% for qtd in [5, 8, 10, 20] %}
+        <option value="{{ qtd }}" {% if paginacao.por_pagina == qtd %}selected{% endif %}>{{ qtd }} por página</option>
+        {% endfor %}
+    </select>
+</form>
+
+<div id="container-tabela-salas" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase">
+                    <th class="py-3.5 px-6">Código</th>
+                    <th class="py-3.5 px-6">Sala / Localização</th>
+                    <th class="py-3.5 px-6 text-center">Capacidade</th>
+                    <th class="py-3.5 px-6">Recursos e Equipamentos</th>
+                    <th class="py-3.5 px-6 text-center">Status</th>
+                    <th class="py-3.5 px-6 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-sm">
+                {% for s in paginacao.itens %}
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-4 px-6 font-mono font-bold text-indigo-700">{{ s.codigo }}</td>
+                    <td class="py-4 px-6">
+                        <p class="font-semibold text-slate-900">{{ s.nome }}</p>
+                        <p class="text-xs text-slate-500">{{ s.bloco }}</p>
+                    </td>
+                    <td class="py-4 px-6 text-center font-semibold text-slate-800">{{ s.capacidade }} lugares</td>
+                    <td class="py-4 px-6 text-slate-600 text-xs">{{ s.recursos }}</td>
+                    <td class="py-4 px-6 text-center">
+                        {% if s.ativa %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Disponível</span>
+                        {% else %}
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Manutenção</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-right whitespace-nowrap space-x-1.5">
+                        {% if tem_permissao('reservas.criar') and s.ativa %}
+                        <a href="{{ url_for('reservas.criar', sala_id=s.id) }}"
+                           class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+                            Reservar
+                        </a>
+                        {% endif %}
+                        {% if tem_permissao('salas.editar') %}
+                        <a href="{{ url_for('salas.editar', sala_id=s.id) }}"
+                           class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                            Editar
+                        </a>
+                        {% endif %}
+                        {% if tem_permissao('salas.excluir') %}
+                        <form method="POST" action="{{ url_for('salas.excluir', sala_id=s.id) }}" class="inline"
+                              data-mensagem="Deseja realmente excluir a sala {{ s.codigo }}?"
+                              onsubmit="return confirm(this.dataset.mensagem);">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition">
+                                Excluir
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-10 text-center text-slate-500">
+                        Nenhuma sala encontrada com os critérios informados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {{ renderizar_paginacao(paginacao, '#container-tabela-salas') }}
+</div>
+{% endblock %}

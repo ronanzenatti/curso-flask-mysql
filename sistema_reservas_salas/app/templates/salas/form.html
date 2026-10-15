@@ -1,0 +1,91 @@
+<!-- app/templates/salas/form.html -->
+{% extends "base.html" %}
+{% block titulo %}{{ 'Editar Sala ' ~ sala.codigo if sala else 'Cadastrar Nova Sala' }} — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900">
+                {{ 'Editar Sala: ' ~ sala.codigo if sala else 'Cadastrar Nova Sala' }}
+            </h2>
+            <p class="text-sm text-slate-500">
+                {{ 'Atualize a capacidade, equipamentos ou status operacional da sala' if sala else 'Preencha as informações de identificação e infraestrutura do espaço' }}
+            </p>
+        </div>
+        <a href="{{ url_for('salas.listar') }}" class="text-sm text-slate-600 hover:text-slate-900 font-medium">
+            ← Voltar para o Catálogo
+        </a>
+    </div>
+
+    <form method="POST" class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Código Identificador</label>
+                {% if sala %}
+                <input type="text" value="{{ sala.codigo }}" disabled
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 font-mono text-sm cursor-not-allowed">
+                {% else %}
+                <input type="text" name="codigo" required maxlength="25" placeholder="Ex: LAB-104 ou AUD-301"
+                       value="{{ dados.get('codigo', '') }}"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 font-mono uppercase text-sm">
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Capacidade Máxima (Lugares)</label>
+                <input type="number" name="capacidade" min="1" max="2000" required
+                       value="{{ dados.get('capacidade', sala.capacidade if sala else 30) }}"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nome da Sala / Espaço</label>
+                <input type="text" name="nome" required maxlength="120"
+                       value="{{ dados.get('nome', sala.nome if sala else '') }}"
+                       placeholder="Ex: Laboratório de Engenharia de Software"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Bloco / Andar / Localização</label>
+                <input type="text" name="bloco" required maxlength="60"
+                       value="{{ dados.get('bloco', sala.bloco if sala else '') }}"
+                       placeholder="Ex: Bloco B - 2º Andar"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Recursos Multimídia e Equipamentos</label>
+                <input type="text" name="recursos" maxlength="255"
+                       value="{{ dados.get('recursos', sala.recursos if sala else '') }}"
+                       placeholder="Ex: 30 PCs, Projetor Full HD, Lousa de Vidro, Ar-condicionado"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            </div>
+
+            {% if sala %}
+            {% set ativa_atual = dados.get('ativa', '1' if sala.ativa else '0') %}
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Status Operacional da Sala</label>
+                <select name="ativa" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm bg-white">
+                    <option value="1" {% if ativa_atual == '1' %}selected{% endif %}>Disponível para Reservas</option>
+                    <option value="0" {% if ativa_atual == '0' %}selected{% endif %}>Em Manutenção / Indisponível</option>
+                </select>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3">
+            <a href="{{ url_for('salas.listar') }}"
+               class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-sm text-sm transition">
+                {{ 'Salvar Alterações' if sala else 'Cadastrar Sala' }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

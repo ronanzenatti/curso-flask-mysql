@@ -1,0 +1,52 @@
+<!-- app/templates/boas_vindas.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalaFácil — Gestão de Reservas de Salas</title>
+    <!-- Carrega o motor do Tailwind CSS via Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Cabeçalho Superior (Header) -->
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="bg-white text-indigo-700 font-bold px-3 py-1 rounded-lg text-lg">SF</span>
+                <h1 class="text-xl font-bold tracking-tight">SalaFácil — Flask + MySQL + Tailwind CSS</h1>
+            </div>
+            <span class="text-xs bg-indigo-900 px-3 py-1 rounded-full font-medium">Aula 02 Concluída</span>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal (Main) -->
+    <main class="max-w-6xl mx-auto px-6 py-10 flex-1 w-full">
+        <!-- Banner de Destaque -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Ambiente Flask Configurado com Sucesso!</h2>
+            <p class="text-slate-600">
+                Sua aplicação já utiliza o padrão <strong>Application Factory</strong>, variáveis de ambiente com <code>.env</code> e estilização responsiva com <strong>Tailwind CSS</strong>.
+            </p>
+        </div>
+
+        <!-- Grade Responsiva de Cards gerados dinamicamente pelo Jinja2 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for item in modulos %}
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="text-3xl mb-3">{{ item.icone }}</div>
+                <h3 class="font-semibold text-lg text-slate-900">{{ item.modulo }}</h3>
+                <p class="text-sm text-indigo-600 mt-1 font-medium">{{ item.status }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Rodapé (Footer) -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-sm text-slate-500">
+        Curso Prático de Flask com MySQL — Sistema de Gestão de Reservas de Salas
+    </footer>
+
+</body>
+</html>

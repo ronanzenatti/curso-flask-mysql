@@ -1,0 +1,23 @@
+<!-- app/templates/auth/403.html -->
+{% extends "base.html" %}
+{% block titulo %}Acesso Negado (403) — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="bg-white rounded-2xl border border-rose-200 p-10 text-center max-w-lg mx-auto mt-12 shadow-sm">
+    <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+        🔒
+    </div>
+    <h2 class="text-2xl font-bold text-slate-900">Permissão Insuficiente</h2>
+    <p class="text-slate-600 text-sm mt-2">
+        Seu perfil atual (<strong>{{ g.usuario.cargo_etiqueta }}</strong>) não possui a permissão personalizada necessária para executar esta operação.
+    </p>
+    <div class="mt-6 flex justify-center gap-3">
+        <a href="{{ url_for('auth.meu_perfil') }}" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium">
+            Ver Minhas Permissões
+        </a>
+        <a href="{{ url_for(rota_inicial()) }}" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium">
+            Voltar para a Página Inicial
+        </a>
+    </div>
+</div>
+{% endblock %}

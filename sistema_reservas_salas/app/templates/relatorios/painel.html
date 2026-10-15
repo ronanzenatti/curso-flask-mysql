@@ -1,0 +1,215 @@
+<!-- app/templates/relatorios/painel.html -->
+{% extends layout %}
+{% from "components/paginacao.html" import renderizar_paginacao %}
+{% block titulo %}Relatórios Gerenciais — SalaFácil{% endblock %}
+
+{% block conteudo %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-slate-900">Relatórios Gerenciais e Indicadores de Ocupação</h2>
+    <p class="text-sm text-slate-500">Período analisado: {{ data_inicio }} até {{ data_fim }}</p>
+</div>
+
+<!-- Período: formulário comum (recarrega a página inteira, atualizando KPIs e as duas tabelas) -->
+<form method="GET" action="{{ url_for('relatorios.painel') }}"
+      class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row sm:items-end gap-3 no-print">
+    <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Data inicial</label>
+        <input type="date" name="data_inicio" value="{{ data_inicio }}" required
+               class="px-3 py-2 rounded-xl border border-slate-300 text-sm">
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Data final</label>
+        <input type="date" name="data_fim" value="{{ data_fim }}" required
+               class="px-3 py-2 rounded-xl border border-slate-300 text-sm">
+    </div>
+    <button type="submit"
+            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+        Aplicar período
+    </button>
+</form>
+
+<!-- Cards de Indicadores (KPIs) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-bold uppercase text-slate-400">Total de Solicitações</p>
+        <p class="text-3xl font-extrabold text-slate-900 mt-2">{{ kpis.total_reservas }}</p>
+        <p class="text-xs text-slate-500 mt-1">Reservas registradas no período</p>
+    </div>
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-bold uppercase text-emerald-600">Reservas Aprovadas</p>
+        <p class="text-3xl font-extrabold text-emerald-700 mt-2">{{ kpis.total_aprovadas }}</p>
+        <p class="text-xs text-slate-500 mt-1">Horários confirmados em salas</p>
+    </div>
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-bold uppercase text-amber-600">Pendentes de Aprovação</p>
+        <p class="text-3xl font-extrabold text-amber-600 mt-2">{{ kpis.total_pendentes }}</p>
+        <p class="text-xs text-slate-500 mt-1">Aguardando decisão de gestor</p>
+    </div>
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs font-bold uppercase text-indigo-600">Horas Totais Alocadas</p>
+        <p class="text-3xl font-extrabold text-indigo-700 mt-2">{{ kpis.total_horas }}h</p>
+        <p class="text-xs text-slate-500 mt-1">Soma das reservas aprovadas</p>
+    </div>
+</div>
+
+<!-- TABELA 1: Consolidado de Ocupação por Sala (Com Pesquisa Dinâmica e Paginação) -->
+<section class="mb-10">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <h3 class="text-lg font-bold text-slate-900">1. Desempenho e Ocupação Consolidada por Sala</h3>
+        <form method="GET" action="{{ url_for('relatorios.painel') }}"
+              data-target="#container-relatorio-salas"
+              data-page-param="page_salas"
+              class="js-form-filtro flex gap-2 no-print">
+            <input type="text" name="q_salas" value="{{ q_salas }}"
+                   placeholder="Filtrar sala por código, nome ou bloco..."
+                   class="js-busca-dinamica px-4 py-2 rounded-xl border border-slate-300 text-sm w-72 bg-white">
+        </form>
+    </div>
+
+    <div id="container-relatorio-salas" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase">
+                        <th class="py-3.5 px-6">Código</th>
+                        <th class="py-3.5 px-6">Sala / Bloco</th>
+                        <th class="py-3.5 px-6 text-center">Capacidade</th>
+                        <th class="py-3.5 px-6 text-center">Total Pedidos</th>
+                        <th class="py-3.5 px-6 text-center">Aprovadas</th>
+                        <th class="py-3.5 px-6 text-center">Canceladas</th>
+                        <th class="py-3.5 px-6 text-right">Horas Ocupadas</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 text-sm">
+                    {% for item in paginacao_salas.itens %}
+                    <tr class="hover:bg-slate-50/80">
+                        <td class="py-3.5 px-6 font-mono font-bold text-indigo-700">{{ item.codigo }}</td>
+                        <td class="py-3.5 px-6">
+                            <span class="font-semibold text-slate-900">{{ item.nome }}</span>
+                            <span class="text-xs text-slate-500 block">{{ item.bloco }}</span>
+                        </td>
+                        <td class="py-3.5 px-6 text-center">{{ item.capacidade }}</td>
+                        <td class="py-3.5 px-6 text-center font-semibold">{{ item.total_reservas }}</td>
+                        <td class="py-3.5 px-6 text-center text-emerald-700 font-semibold">{{ item.aprovadas }}</td>
+                        <td class="py-3.5 px-6 text-center text-rose-600">{{ item.canceladas }}</td>
+                        <td class="py-3.5 px-6 text-right font-mono font-bold text-slate-900">{{ item.horas_ocupadas }} h</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-500">
+                            Nenhuma sala encontrada para "{{ q_salas }}".
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ renderizar_paginacao(paginacao_salas, '#container-relatorio-salas') }}
+    </div>
+</section>
+
+<!-- TABELA 2: Relatório Analítico de Reservas (Com Pesquisa Dinâmica e Paginação) -->
+<section>
+    <h3 class="text-lg font-bold text-slate-900 mb-4">2. Relatório Analítico de Reservas no Período</h3>
+
+    <form method="GET" action="{{ url_for('relatorios.painel') }}"
+          data-target="#container-relatorio-analitico"
+          data-page-param="page"
+          class="js-form-filtro bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4 flex flex-col gap-3 no-print">
+        <!-- O período vem do formulário de cima; aqui ele só "acompanha" a busca -->
+        <input type="hidden" name="data_inicio" value="{{ data_inicio }}">
+        <input type="hidden" name="data_fim" value="{{ data_fim }}">
+
+        <div class="flex flex-col lg:flex-row gap-3">
+            <input type="text" name="q" value="{{ q_analitico }}"
+                   placeholder="Pesquisar dinamicamente por evento, sala, solicitante ou setor..."
+                   class="js-busca-dinamica flex-1 px-4 py-2 rounded-xl border border-slate-300 text-sm">
+            <select name="status" class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                <option value="">Todos os Status</option>
+                <option value="aprovada" {% if status_filtro == 'aprovada' %}selected{% endif %}>Aprovadas</option>
+                <option value="pendente" {% if status_filtro == 'pendente' %}selected{% endif %}>Pendentes</option>
+                <option value="rejeitada" {% if status_filtro == 'rejeitada' %}selected{% endif %}>Rejeitadas</option>
+                <option value="cancelada" {% if status_filtro == 'cancelada' %}selected{% endif %}>Canceladas</option>
+            </select>
+            <select name="per_page" class="js-filtro-imediato px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                {% for qtd in [5, 8, 10, 20] %}
+                <option value="{{ qtd }}" {% if paginacao_analitico.por_pagina == qtd %}selected{% endif %}>{{ qtd }} por página</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if tem_permissao('relatorios.exportar') %}
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="button"
+                    data-url="{{ url_for('relatorios.painel', imprimir=1) }}" data-nova-aba="1"
+                    class="js-acao-com-filtros px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+                🖨️ Imprimir Relatório Completo
+            </button>
+            <button type="button"
+                    data-url="{{ url_for('relatorios.exportar_csv') }}"
+                    class="js-acao-com-filtros px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+                📥 Exportar CSV (Excel)
+            </button>
+            <span class="text-xs text-slate-500">Os dois botões usam o período e os filtros que estão na tela agora.</span>
+        </div>
+        {% endif %}
+    </form>
+
+    <div id="container-relatorio-analitico" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase">
+                        <th class="py-3.5 px-6">Data / Horário</th>
+                        <th class="py-3.5 px-6">Sala</th>
+                        <th class="py-3.5 px-6">Evento / Finalidade</th>
+                        <th class="py-3.5 px-6">Solicitante / Setor</th>
+                        <th class="py-3.5 px-6">Aprovador</th>
+                        <th class="py-3.5 px-6 text-right">Duração</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 text-sm">
+                    {% for r in paginacao_analitico.itens %}
+                    <tr class="hover:bg-slate-50/80">
+                        <td class="py-3.5 px-6 whitespace-nowrap">
+                            <p class="font-semibold text-slate-900">{{ r.data_reserva.strftime('%d/%m/%Y') }}</p>
+                            <p class="text-xs font-mono text-slate-500">{{ r.inicio_fmt }} - {{ r.fim_fmt }}</p>
+                        </td>
+                        <td class="py-3.5 px-6">
+                            <span class="font-mono text-xs font-bold text-indigo-700">{{ r.sala_codigo }}</span>
+                            <p class="text-xs text-slate-600">{{ r.sala_nome }}</p>
+                        </td>
+                        <td class="py-3.5 px-6">
+                            <p class="font-semibold text-slate-900">{{ r.titulo }}</p>
+                            <p class="text-xs text-slate-500">{{ r.finalidade }} ({{ r.status|upper }})</p>
+                        </td>
+                        <td class="py-3.5 px-6">
+                            <p class="font-medium text-slate-800">{{ r.solicitante_nome }}</p>
+                            <p class="text-xs text-slate-500">{{ r.solicitante_setor }}</p>
+                        </td>
+                        <td class="py-3.5 px-6 text-xs text-slate-600">{{ r.aprovador_nome }}</td>
+                        <td class="py-3.5 px-6 text-right font-mono font-semibold text-slate-800">{{ r.duracao_min }} min</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="py-10 text-center text-slate-500">
+                            Nenhum registro encontrado no relatório para os filtros atuais.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ renderizar_paginacao(paginacao_analitico, '#container-relatorio-analitico') }}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if imprimir %}
+<script>
+    // Modo impressão: abre a janela de impressão assim que a página terminar de carregar
+    window.addEventListener("load", () => window.print());
+</script>
+{% endif %}
+{% endblock %}
